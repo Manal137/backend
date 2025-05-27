@@ -41,29 +41,40 @@ require('dotenv').config();
 
 const app = express();
 
-// CORS configuration
+// ✅ CORS configuration
 const allowedOrigins = ['https://frontend-nu-ebon-15.vercel.app'];
 
-app.use(cors({
+const corsOptions = {
   origin: allowedOrigins,
-  methods: ['GET', 'POST', 'PUT', 'DELETE'],
-}));
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  optionsSuccessStatus: 200 // Some legacy browsers choke on 204
+};
 
-// ✅ Handle preflight requests for all routes
-app.options('*', cors());
+// ✅ Apply CORS to all routes
+app.use(cors(corsOptions));
+
+// ✅ Enable preflight for all routes
+app.options('*', cors(corsOptions));
 
 app.use(express.json());
 
-// Routes
+// ✅ Import routes AFTER setting CORS
 app.use('/api/auth', require('./routes/auth'));
 
-// Root test route
+// ✅ Root route
 app.get('/', (req, res) => {
   res.send('Backend is running.');
 });
 
-// DB (update path as needed)
-const pool = require('../db');
+// ✅ DB connection (adjust path if needed)
+const pool = require('../db'); // Or './db'
+
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+
+// ✅ DB connection (adjust path if needed)
+const pool = require('../db'); // Or './db'
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
