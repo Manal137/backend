@@ -1,6 +1,4 @@
 
-
-
 const express = require('express');
 const cors = require('cors');
 require('dotenv').config();
@@ -18,3 +16,5 @@ app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
 app.get('/', (req, res) => {
   res.send('Backend is running.');
 });
+
+const pool = require('../db'); // or './db' if in same folder
