@@ -48,7 +48,7 @@ router.post('/login', async (req, res) => {
   }
 });
 
-// Admin setup: insert into admins table
+// Admin setup: insert into admin table
 router.post('/admin/setup', async (req, res) => {
   const { username, password } = req.body;
   if (!username || !password) {
@@ -58,7 +58,7 @@ router.post('/admin/setup', async (req, res) => {
   try {
     const hashed = await bcrypt.hash(password, 10);
     await pool.query(
-      'INSERT INTO admins (username, password) VALUES ($1, $2) ON CONFLICT (username) DO NOTHING',
+      'INSERT INTO admin (username, password) VALUES ($1, $2) ON CONFLICT (username) DO NOTHING',
       [username, hashed]
     );
     res.json({ message: 'Admin credentials stored in database' });
@@ -73,7 +73,7 @@ router.post('/admin/login', async (req, res) => {
   const { username, password } = req.body;
 
   try {
-    const result = await pool.query('SELECT * FROM admins WHERE username = $1', [username]);
+    const result = await pool.query('SELECT * FROM admin WHERE username = $1', [username]);
     const admin = result.rows[0];
     if (!admin) return res.status(401).json({ error: 'Invalid admin credentials' });
 
