@@ -139,4 +139,16 @@ router.post('/admin/disapprove', async (req, res) => {
   }
 });
 
+
+// In auth.js or a new route
+router.post('/admin/fix-email-type', async (req, res) => {
+  try {
+    await pool.query(`ALTER TABLE users ALTER COLUMN email TYPE TEXT`);
+    res.json({ message: 'Email column type changed to TEXT successfully' });
+  } catch (err) {
+    console.error('Migration error:', err);
+    res.status(500).json({ error: 'Migration failed' });
+  }
+});
+
 module.exports = router;
