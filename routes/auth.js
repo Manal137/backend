@@ -4,24 +4,8 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const pool = require('../db');
 const router = express.Router();
+const verifyAdmin = require('../middleware/verifyAdmin');
 require('dotenv').config();
-
-// // Register: user starts as not approved
-// router.post('/register', async (req, res) => {
-//   const { username, email, password } = req.body;
-//   try {
-//     const hashed = await bcrypt.hash(password, 10);
-//     const result = await pool.query(
-//       'INSERT INTO users (username, email, password, is_approved) VALUES ($1, $2, $3, $4) RETURNING *',
-//       [username, email, hashed, false]
-//     );
-//     console.log('Registered user:', result.rows[0]);
-//     res.status(201).json(result.rows[0]);
-//   } catch (err) {
-//     console.error('Registration error:', err);
-//     res.status(400).json({ error: err.message || 'Something went wrong' });
-//   }
-// });
 
 
 // Register: user starts as not approved
@@ -115,7 +99,7 @@ router.post('/admin/login', async (req, res) => {
 });
 
 // Admin approves user access
-router.post('/admin/approve', async (req, res) => {
+router.post('/admin/approve', verifyAdmin, async (req, res) => {
   const { userId } = req.body;
   try {
     await pool.query('UPDATE users SET is_approved = true WHERE id = $1', [userId]);
@@ -126,18 +110,18 @@ router.post('/admin/approve', async (req, res) => {
   }
 });
 
-router.get('/admin/all-users', async (req, res) => {
-  console.log('Fetching all users');
-  try {
-    const result = await pool.query('SELECT id, username, email, is_approved FROM users');
-    res.json(result.rows);
-  } catch (err) {
-    console.error(err.message);
-    res.status(500).json({ error: 'Server error' });
-  }
-});
+// router.get('/admin/all-users', async (req, res) => {
+//   console.log('Fetching all users');
+//   try {
+//     const result = await pool.query('SELECT id, username, email, is_approved FROM users');
+//     res.json(result.rows);
+//   } catch (err) {
+//     console.error(err.message);
+//     res.status(500).json({ error: 'Server error' });
+//   }
+// });
 
-router.delete('/admin/delete-user/:id', async (req, res) => {
+router.delete('/admin/delete-user/:id', verifyAdmin, async (req, res) => {
   const userId = req.params.id;
   try {
     await pool.query('DELETE FROM users WHERE id = $1', [userId]);
@@ -148,7 +132,7 @@ router.delete('/admin/delete-user/:id', async (req, res) => {
   }
 });
 
-router.post('/admin/disapprove', async (req, res) => {
+router.post('/admin/disapprove', verifyAdmin, async (req, res) => {
   const { userId } = req.body;
   try {
     await pool.query('UPDATE users SET is_approved = false WHERE id = $1', [userId]);
@@ -156,6 +140,18 @@ router.post('/admin/disapprove', async (req, res) => {
   } catch (err) {
     console.error('Admin disapproval error:', err);
     res.status(500).json({ error: 'Failed to disapprove user' });
+  }
+});
+
+// Protect this route
+router.get('/admin/all-users', verifyAdmin, async (req, res) => {
+  console.log('Fetching all users');
+  try {
+    const result = await pool.query('SELECT id, username, email, is_approved FROM users');
+    res.json(result.rows);
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).json({ error: 'Server error' });
   }
 });
 
