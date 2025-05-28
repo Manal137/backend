@@ -37,47 +37,42 @@
 
 const express = require('express');
 const cors = require('cors');
-const dotenv = require('dotenv');
+require('dotenv').config();
+
 const app = express();
 
-dotenv.config(); // Load env vars
-
-// ✅ Allow only specific frontend origin
+// ✅ CORS: only allow your frontend
 const allowedOrigins = ['https://frontend-nu-ebon-15.vercel.app'];
 
-const corsOptions = {
+app.use(cors({
   origin: function (origin, callback) {
-    if (!origin || allowedOrigins.includes(origin)) {
+    if (!origin || allowedOrigins.indexOf(origin) !== -1) {
       callback(null, true);
     } else {
       callback(new Error('Not allowed by CORS'));
     }
   },
-  credentials: true, // If you're using cookies or auth headers
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
-  optionsSuccessStatus: 200,
-};
+  credentials: true
+}));
 
-// ✅ CORS comes FIRST
-app.use(cors(corsOptions));
-app.options('*', cors(corsOptions)); // Preflight for all routes
+// ✅ Preflight handler
+app.options('*', cors());
 
-// ✅ JSON parsing middleware
 app.use(express.json());
 
-// ✅ Connect to DB
-const pool = require('./db'); // Corrected relative path if needed
-
-// ✅ Routes
+// ✅ API routes
 app.use('/api/auth', require('./routes/auth'));
 
-// ✅ Health check route
+// ✅ Test route
 app.get('/', (req, res) => {
   res.send('Backend is running.');
 });
 
-// ✅ Start server
+// ✅ DB connection
+const pool = require('./db'); // adjust if needed
+
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
 
