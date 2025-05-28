@@ -92,65 +92,113 @@ router.post('/login', async (req, res) => {
   }
 });
 
-// -------- Admin setup --------
-// Create admin credentials (should be done once manually)
+// // -------- Admin setup --------
+// // Create admin credentials (should be done once manually)
+// router.post('/admin/setup', async (req, res) => {
+//   const { username, password } = req.body;
+//   if (!username || !password) {
+//     return res.status(400).json({ error: 'Username and password are required' });
+//   }
+
+//   try {
+//     const hashed = await bcrypt.hash(password, 12);
+
+//     await pool.query(
+//       'INSERT INTO admins (username, password) VALUES ($1, $2) ON CONFLICT (username) DO NOTHING',
+//       [username, hashed]
+//     );
+
+//     res.json({ message: 'Admin credentials stored in database' });
+
+//   } catch (err) {
+//     console.error('Admin setup error:', err);
+//     res.status(500).json({ error: 'Internal server error' });
+//   }
+// });
+
+// // -------- Admin login --------
+// router.post('/admin/login', async (req, res) => {
+//   const { username, password } = req.body;
+//   if (!username || !password) 
+//     return res.status(400).json({ error: 'Missing username or password' });
+
+//   try {
+//     const result = await pool.query('SELECT * FROM admins WHERE username = $1', [username]);
+//     const admin = result.rows[0];
+//     if (!admin) 
+//       return res.status(401).json({ error: 'Invalid admin credentials' });
+
+//     const valid = await bcrypt.compare(password, admin.password);
+//     if (!valid) 
+//       return res.status(401).json({ error: 'Invalid admin credentials' });
+
+//     const token = jwt.sign(
+//       { adminId: admin.id }, 
+//       process.env.JWT_SECRET, 
+//       { expiresIn: '1h' }
+//     );
+
+//     res.json({
+//       token,
+//       admin: {
+//         id: admin.id,
+//         username: admin.username
+//       }
+//     });
+
+//   } catch (err) {
+//     console.error('Admin login error:', err);
+//     res.status(500).json({ error: 'Internal server error' });
+//   }
+// });
+
+
+// Admin setup: insert into admins table
 router.post('/admin/setup', async (req, res) => {
-  const { username, password } = req.body;
-  if (!username || !password) {
-    return res.status(400).json({ error: 'Username and password are required' });
+  const { email, password } = req.body;
+  if (!email || !password) {
+    return res.status(400).json({ error: 'Email and password are required' });
   }
 
   try {
-    const hashed = await bcrypt.hash(password, 12);
-
+    const hashed = await bcrypt.hash(password, 10);
     await pool.query(
-      'INSERT INTO admins (username, password) VALUES ($1, $2) ON CONFLICT (username) DO NOTHING',
-      [username, hashed]
+      'INSERT INTO admins (email, password) VALUES ($1, $2) ON CONFLICT (email) DO NOTHING',
+      [email, hashed]
     );
-
     res.json({ message: 'Admin credentials stored in database' });
-
   } catch (err) {
     console.error('Admin setup error:', err);
-    res.status(500).json({ error: 'Internal server error' });
+    res.status(500).json({ error: 'Failed to store admin credentials' });
   }
 });
 
-// -------- Admin login --------
+// Admin login: validate from DB and return admin object
 router.post('/admin/login', async (req, res) => {
-  const { username, password } = req.body;
-  if (!username || !password) 
-    return res.status(400).json({ error: 'Missing username or password' });
+  const { email, password } = req.body;
 
   try {
-    const result = await pool.query('SELECT * FROM admins WHERE username = $1', [username]);
+    const result = await pool.query('SELECT * FROM admins WHERE email = $1', [email]);
     const admin = result.rows[0];
-    if (!admin) 
-      return res.status(401).json({ error: 'Invalid admin credentials' });
+    if (!admin) return res.status(401).json({ error: 'Invalid admin credentials' });
 
     const valid = await bcrypt.compare(password, admin.password);
-    if (!valid) 
-      return res.status(401).json({ error: 'Invalid admin credentials' });
+    if (!valid) return res.status(401).json({ error: 'Invalid admin credentials' });
 
-    const token = jwt.sign(
-      { adminId: admin.id }, 
-      process.env.JWT_SECRET, 
-      { expiresIn: '1h' }
-    );
-
+    const token = jwt.sign({ adminId: admin.id }, process.env.JWT_SECRET);
     res.json({
       token,
       admin: {
         id: admin.id,
-        username: admin.username
+        email: admin.email
       }
     });
-
   } catch (err) {
     console.error('Admin login error:', err);
-    res.status(500).json({ error: 'Internal server error' });
+    res.status(500).json({ error: 'Server error' });
   }
 });
+
 
 // -------- Admin approves user --------
 router.post('/admin/approve', authenticateAdmin, async (req, res) => {
