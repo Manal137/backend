@@ -8,6 +8,7 @@ const verifyAdmin = require('../middleware/verifyAdmin');
 const crypto = require('crypto');
 const resetTokens = new Map();
 require('dotenv').config();
+const nodemailer = require('nodemailer');
 
 
 // Register: user starts as not approved
