@@ -157,7 +157,7 @@ router.get('/admin/all-users', verifyAdmin, async (req, res) => {
   }
 });
 
-// Step 1: Request password reset
+
 router.post('/forgot-password', async (req, res) => {
   const { email } = req.body;
   if (!email) return res.status(400).json({ error: 'Email is required' });
@@ -170,8 +170,32 @@ router.post('/forgot-password', async (req, res) => {
     const token = crypto.randomBytes(32).toString('hex');
     resetTokens.set(token, user.id);
 
-    // TODO: Send token via email (for now, return in response for testing)
-    res.json({ message: 'Password reset link sent', resetToken: token });
+    // Create a reset URL with the token
+    const resetUrl = `https://frontend-nu-ebon-15.vercel.app/reset-password/<token>`;
+
+    // Setup Nodemailer transporter (configure with your SMTP/email provider)
+    let transporter = nodemailer.createTransport({
+      service: 'gmail', // or other email service
+      auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS,
+      },
+    });
+
+    // Email options
+    let mailOptions = {
+      from: '"Your App Name" <no-reply@yourdomain.com>',
+      to: email,
+      subject: 'Password Reset Request',
+      text: `You requested a password reset. Click this link to reset your password: ${resetUrl}`,
+      html: `<p>You requested a password reset.</p><p>Click this link to reset your password: <a href="${resetUrl}">${resetUrl}</a></p>`,
+    };
+
+    // Send the email
+    await transporter.sendMail(mailOptions);
+
+    res.json({ message: 'Password reset link sent' });
+
   } catch (err) {
     console.error('Forgot password error:', err);
     res.status(500).json({ error: 'Server error' });
